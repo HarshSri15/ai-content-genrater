@@ -1,25 +1,38 @@
 import streamlit as st
 from transformers import pipeline
+import traceback
 
-# Load the model
-generator = pipeline("text2text-generation", model="google/flan-t5-large")
+st.set_page_config(page_title="AI Content Generator", layout="centered")
 
-def generate_content(topic, platform):
-    prompt = f"Generate an engaging piece of content about '{topic}' for the platform '{platform}'."
-    result = generator(prompt, max_length=100, num_return_sequences=1)
-    return result[0]['generated_text']
+st.title("🧠 AI Content Generator")
+st.write("Generate creative text using a Hugging Face model.")
 
-# Streamlit App
-st.title("AI Content Generator")
+# Cache the model so it doesn't reload on every interaction
+@st.cache_resource
+def load_model():
+    try:
+        pipe = pipeline("text-generation", model="gpt2")
+        return pipe
+    except Exception as e:
+        st.error("🚨 Failed to load model:")
+        st.code(traceback.format_exc())
+        return None
 
-topic = st.text_input("Enter the topic:")
-platform = st.selectbox("Choose the platform:", ["Twitter", "Instagram", "LinkedIn", "Blog"])
+pipe = load_model()
 
-if st.button("Generate"):
-    if topic and platform:
-        with st.spinner("Generating..."):
-            result = generate_content(topic, platform)
-            st.success("Here is your content:")
-            st.write(result)
+try:
+    if pipe is not None:
+        prompt = st.text_area("Enter your prompt", "Once upon a time")
+        max_length = st.slider("Max length", min_value=10, max_value=200, value=50)
+
+        if st.button("Generate"):
+            with st.spinner("Generating..."):
+                output = pipe(prompt, max_length=max_length, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
+                st.success("Generated text:")
+                st.text_area("Result", output[0]["generated_text"], height=200)
     else:
-        st.warning("Please enter a topic and select a platform.")
+        st.warning("Model not loaded. Check the error above.")
+
+except Exception as e:
+    st.error("🚨 An error occurred while generating text:")
+    st.code(traceback.format_exc())
