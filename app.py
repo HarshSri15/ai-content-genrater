@@ -1,24 +1,25 @@
 import streamlit as st
 from transformers import pipeline
 
-# Load model and tokenizer
+# Load the model
 generator = pipeline("text2text-generation", model="google/flan-t5-large")
 
 def generate_content(topic, platform):
-    prompt = f"Write a {platform} post about {topic}"
+    prompt = f"Generate an engaging piece of content about '{topic}' for the platform '{platform}'."
     result = generator(prompt, max_length=100, num_return_sequences=1)
     return result[0]['generated_text']
 
-# Streamlit app interface
+# Streamlit App
 st.title("AI Content Generator")
-topic = st.text_input("Enter a topic:")
-platform = st.selectbox("Select a platform:", ["Twitter", "LinkedIn", "Instagram"])
+
+topic = st.text_input("Enter the topic:")
+platform = st.selectbox("Choose the platform:", ["Twitter", "Instagram", "LinkedIn", "Blog"])
 
 if st.button("Generate"):
     if topic and platform:
-        with st.spinner("Generating content..."):
+        with st.spinner("Generating..."):
             result = generate_content(topic, platform)
-            st.success("Here's your AI-generated content:")
+            st.success("Here is your content:")
             st.write(result)
     else:
         st.warning("Please enter a topic and select a platform.")
